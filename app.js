@@ -1,16 +1,18 @@
 const uuid = "0000fd6f-0000-1000-8000-00805f9b34fb";
 
 const buttonScan = document.getElementById('ble-scan-button');
+const buttonStop = document.getElementById('ble-stop-button');
 const textUsersNum = document.getElementById('text-usersnum');
 const tableUsers = document.getElementById('table-users');
 
-buttonScan.addEventListener( 'click', function () {
-	onButtonClick();
-} );
+let scan;
+
+buttonScan.addEventListener( 'click', onButtonClick);
+buttonStop.addEventListener( 'click', stopScan);
 
 async function onButtonClick() {
   try {
-    const scan = await navigator.bluetooth.requestLEScan({filters: [{services: [uuid]}]});
+    scan = await navigator.bluetooth.requestLEScan({filters: [{services: [uuid]}]});
 
     let users = [];
 
@@ -51,15 +53,17 @@ async function onButtonClick() {
       }
 
       textUsersNum.innerHTML = users.length + ' counts!';
+
+      // updateTables(users);
     });
 
-    setTimeout(stopScan, 10000);
-    function stopScan() {
-      console.log('Stopping scan...');
-      scan.stop();
-      console.log('Stopped.  scan.active = ' + scan.active);
-    }
   } catch(error)  {
     console.log('Argh! ' + error);
   }
+}
+
+function stopScan() {
+  console.log('Stopping scan...');
+  scan.stop();
+  console.log('Stopped.  scan.active = ' + scan.active);
 }
