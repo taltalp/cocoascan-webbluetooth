@@ -1,7 +1,8 @@
 const uuid = "0000fd6f-0000-1000-8000-00805f9b34fb";
 
 const buttonScan = document.getElementById('ble-scan-button');
-const output = document.getElementById('output');
+const textUsersNum = document.getElementById('text-usersnum');
+const tableUsers = document.getElementById('table-users');
 
 buttonScan.addEventListener( 'click', function () {
 	onButtonClick();
@@ -10,6 +11,8 @@ buttonScan.addEventListener( 'click', function () {
 async function onButtonClick() {
   try {
     const scan = await navigator.bluetooth.requestLEScan({filters: [{services: [uuid]}]});
+
+    let users = [];
 
     console.log('Scan started with:');
     console.log(' acceptAllAdvertisements: ' + scan.acceptAllAdvertisements);
@@ -24,12 +27,30 @@ async function onButtonClick() {
       console.log('  RSSI: ' + event.rssi);
       console.log('  TX Power: ' + event.txPower);
       console.log('  UUIDs: ' + event.uuids);
-      event.manufacturerData.forEach((valueDataView, key) => {
-        console.logDataView('Manufacturer', key, valueDataView);
-      });
-      event.serviceData.forEach((valueDataView, key) => {
-        logDataView('Service', key, valueDataView);
-      });
+
+      let index = users.findIndex((u) => u.id == [event.device.id]);
+
+      if(index < 0){
+        users.push({id: event.device.id, rssi: event.rssi});
+
+        let newRow = tableUsers.insertRow();
+        let newCell = newRow.insertCell();
+        let newText = document.createTextNode(users.length);
+        newCell.appendChild(newText);
+
+        newCell = newRow.insertCell();
+        newText = document.createTextNode(event.device.id);
+        newCell.appendChild(newText);
+
+        newCell = newRow.insertCell();
+        newText = document.createTextNode(event.rssi);
+        newCell.appendChild(newText);
+      } else {
+        users[index]['rssi'] = event.rssi;
+        tableUsers.rows[index+1].cells[2].innerHTML = event.rssi;
+      }
+
+      textUsersNum.innerHTML = users.length + ' counts!';
     });
 
     setTimeout(stopScan, 10000);
@@ -42,15 +63,3 @@ async function onButtonClick() {
     console.log('Argh! ' + error);
   }
 }
-
-/* Utils */
-
-const logDataView = (labelOfDataSource, key, valueDataView) => {
-  const hexString = [...new Uint8Array(valueDataView.buffer)].map(b => {
-    return b.toString(16).padStart(2, '0');
-  }).join(' ');
-  let text = `  ${labelOfDataSource} Data: ` + key +
-      '\n    (Hex) ' + hexString;
-  console.log(text);
-  output.innerHTML = text + output.innerHTML;
-};
